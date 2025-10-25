@@ -24,3 +24,16 @@ git:
 
 push:
 	@bash scripts/push.sh
+
+service:
+	@bash scripts/create_service.sh
+
+timer:
+	@bash scripts/create_timer.sh
+
+help:
+	@echo -e "$(OK_COLOR)==== All commands of ${name} configuration ====$(NO_COLOR)"
+	@echo -e "$(WARN_COLOR)- make git				: Set user and mail for git"
+	@echo -e "$(WARN_COLOR)- make push				: Push to the repository"
+	@echo -e "$(WARN_COLOR)- make service				: Create systemd service"
+	@echo -e "$(WARN_COLOR)- make timer				: Create systemd timer"
