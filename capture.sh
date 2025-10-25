@@ -1,74 +1,127 @@
 #!/bin/bash
 
-# Скрипт для автоматического распознавания и записи видео с USB-камер (/dev/videoN)
-# Требования: ffmpeg, v4l-utils (установите: sudo apt install ffmpeg v4l-utils)
-# Использование: ./record_camera.sh [duration] [output_file] [device]
-#   duration: время записи в секундах (по умолчанию 60)
-#   output_file: имя выходного файла (по умолчанию output.mp4)
-#   device: конкретное устройство, e.g. /dev/video0 (по умолчанию автоопределение первого)
+DEV_0="/dev/video0"
+DEV_1="/dev/video1"
+SIZE="640x480"
 
-set -e  # Остановка при ошибке
+# Функция для ожидания подключения съёмного устройства
+# Возвращает путь к первому найденному устройству через глобальную переменную DEVICE_PATH
+wait_for_removable_device() {
+    DEVICE_PATH=""  # Сбрасываем переменную на всякий случай
 
-# Функция для обнаружения устройств камер
-detect_cameras() {
-    echo "Обнаружение устройств /dev/video*..."
-    local devices=()
-    for dev in /dev/video*; do
-        if [[ -c "$dev" ]]; then
-            # Проверяем, что это UVC-устройство (камера)
-            if v4l2-ctl --device="$dev" --all > /dev/null 2>&1; then
-                devices+=("$dev")
-                echo "Найдено устройство: $dev"
-            fi
+    while true; do
+        USER=$(whoami)
+        FOUND=0
+        FIRST_MOUNT=""
+
+        # Проверяем /media/<user>/
+        if [ -d "/media/$USER" ]; then
+            for dir in "/media/$USER"/*; do
+                if [ -d "$dir" ]; then
+                    if [ $FOUND -eq 0 ]; then
+                        FIRST_MOUNT="$dir"
+                        FOUND=1
+                    fi
+                fi
+            done
+        fi
+
+        # Проверяем /run/media/<user>/
+        if [ -d "/run/media/$USER" ]; then
+            for dir in "/run/media/$USER"/*; do
+                if [ -d "$dir" ]; then
+                    if [ $FOUND -eq 0 ]; then
+                        FIRST_MOUNT="$dir"
+                        FOUND=1
+                    fi
+                fi
+            done
+        fi
+
+        if [ $FOUND -eq 1 ]; then
+            DEVICE_PATH="$FIRST_MOUNT"
+            echo "Съёмное устройство подключено: $DEVICE_PATH"
+            return 0  # Успешно найдено
+        else
+            sleep 5
         fi
     done
-    echo "Всего найдено камер: ${#devices[@]}"
-    echo "${devices[@]}"
 }
 
-# Основная функция записи
-record_video() {
-    local device="$1"
-    local duration="$2"
-    local output="$3"
-
-    echo "Запись с устройства: $device"
-    echo "Длительность: $duration сек"
-    echo "Выходной файл: $output"
-
-    # Команда FFmpeg для записи MJPEG/H.264 с /dev/videoN
-    # -f v4l2: формат Video4Linux2
-    # -framerate 30: 30 FPS (адаптируйте под камеру)
-    # -video_size 640x480: разрешение (измените по необходимости)
-    # -t $duration: время записи
-    ffmpeg -f v4l2 -framerate 30 -video_size 640x480 -i "$device" \
-           -c:v libx264 -preset ultrafast -crf 23 \
-           -t "$duration" "$output" -y  # -y перезаписать файл
-
-    echo "Запись завершена: $output"
+# Функция для ожидания подключения видеоустройства /dev/video0
+# Устанавливает в глобальную переменную VIDEO_DEVICE_0 путь к устройству при успехе
+wait_for_video_device_0() {
+    while true; do
+        if [ -c "$DEV_0" ]; then
+            echo "Видеоустройство подключено: $DEV_0"
+            return 0
+        else
+            echo "Ожидание подключения видеоустройства $DEV_0..."
+            sleep 5
+        fi
+    done
 }
 
-# Парсинг аргументов
-DURATION=${1:-60}
-OUTPUT=${2:-"output_$(date +%Y%m%d_%H%M%S).mp4"}
-DEVICE=${3:-""}
+# Функция для ожидания подключения видеоустройства /dev/video1
+# Устанавливает в глобальную переменную VIDEO_DEVICE_1 путь к устройству при успехе
+wait_for_video_device_1() {
+    while true; do
+        if [ -c "$DEV_1" ]; then
+            echo "Видеоустройство подключено: $DEV_1"
+            return 0
+        else
+            echo "Ожидание подключения видеоустройства $DEV_1..."
+            sleep 5
+        fi
+    done
+}
 
-# Если устройство не указано — автоопределение первого
-if [[ -z "$DEVICE" ]]; then
-    local available_devices=($(detect_cameras))
-    if [[ ${#available_devices[@]} -eq 0 ]]; then
-        echo "Ошибка: Камеры не найдены!"
-        exit 1
+# Проверяем подключенные девайсы
+wait_for_removable_device
+# Теперь переменная $DEVICE_PATH содержит путь к устройству
+
+# Проверяем подключение первой камеры
+wait_for_video_device_0
+# Теперь $VIDEO_DEVICE_0 содержит путь, если устройство найдено
+
+# Проверяем подключение второй камеры
+wait_for_video_device_1
+# Теперь $VIDEO_DEVICE_1 содержит путь, если устройство найдено
+
+# Проверяем подключение второй камеры
+# wait_for_video_device_1
+# Теперь $VIDEO_DEVICE_1 содержит путь, если устройство найдено
+
+record_video_from_device_0() {
+    # Проверяем, что обе переменные заданы
+    if [ -z "$DEV_0" ] || [ -z "$DEVICE_PATH" ]; then
+        echo "Ошибка: $DEV_0 или $DEVICE_PATH не определены!" >&2
+        return 1
     fi
-    DEVICE="${available_devices[0]}"
-    echo "Автоматически выбранное устройство: $DEVICE"
-fi
 
-# Проверка существования устройства
-if [[ ! -c "$DEVICE" ]]; then
-    echo "Ошибка: Устройство $DEVICE не существует или недоступно!"
-    exit 1
-fi
+    # Создаём имя файла: dev0_дд.мм.гг_чч:мм:сс.mp4
+    TIMESTAMP=$(date +"%d.%m.%y_%H:%M:%S")
+    OUTPUT_FILE="$DEVICE_PATH/dev0_${TIMESTAMP}.mp4"
 
-# Запуск записи
-record_video "$DEVICE" "$DURATION" "$OUTPUT"
+    echo "Начинаем запись видео в: $OUTPUT_FILE"
+    echo "Параметры: , 30 FPS, H.264"
+
+    # Запуск ffmpeg
+    ffmpeg -f v4l2 \
+           -framerate 30 \
+           -video_size $SIZE \
+           -i "$DEV_0" \
+           -c:v libx264 \
+           -preset medium \
+           -crf 23 \
+           "$OUTPUT_FILE"
+
+    if [ $? -eq 0 ]; then
+        echo "Запись завершена: $OUTPUT_FILE"
+    else
+        echo "Ошибка при записи видео!" >&2
+        return 1
+    fi
+}
+
+record_video_from_device_0
