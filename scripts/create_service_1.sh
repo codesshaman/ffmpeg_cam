@@ -7,7 +7,7 @@ CURRENT_DIR=$(pwd)
 CURRENT_USER=$(whoami)
 
 # Путь к файлу
-SERVICE_PATH="/etc/systemd/system/ffmpeg_capture.service"
+SERVICE_PATH="/etc/systemd/system/ffmpeg_capture_1.service"
 
 # Проверяем, существует ли файл
 if [ -f "$SERVICE_PATH" ]; then
@@ -17,13 +17,13 @@ else
 
     # Содержимое для файла
     SERVICE_CONTENT="[Unit]
-Description=Token Update Service
+Description=Camera 1 capturing service
 After=network.target
 
 [Service]
-ExecStart=$CURRENT_DIR/capture.sh
-StandardOutput=file:$CURRENT_DIR/logfile.log
-StandardError=file:$CURRENT_DIR/logfile.log
+ExecStart=$CURRENT_DIR/capture_dev1.sh
+StandardOutput=file:$CURRENT_DIR/logfile_cam_1.log
+StandardError=file:$CURRENT_DIR/logfile_cam_1.log
 Group=$CURRENT_USER
 User=$CURRENT_USER
 Restart=on-failure
@@ -44,8 +44,8 @@ WantedBy=multi-user.target"
 
     # Перезапускаем systemd для применения изменений
     sudo systemctl daemon-reload
-    sudo systemctl enable ffmpeg_capture.service
-    sudo systemctl start ffmpeg_capture.service
-    sudo systemctl status ffmpeg_capture.service
+    sudo systemctl enable ffmpeg_capture_1.service
+    sudo systemctl start ffmpeg_capture_1.service
+    sudo systemctl status ffmpeg_capture_1.service
     echo "Systemd перезагружен."
 fi

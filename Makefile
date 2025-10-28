@@ -18,6 +18,9 @@ ifneq (,$(wildcard .env))
     export $(shell sed 's/=.*//' .env)
 endif
 
+all:
+	@bash capture.sh
+
 git:
 	@printf "$(YELLOW)==== Set user name and email to git for ${name} repo... ====$(NO_COLOR)\n"
 	@bash scripts/gituser.sh

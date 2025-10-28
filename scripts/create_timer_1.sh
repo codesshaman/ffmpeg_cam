@@ -1,10 +1,7 @@
 #!/bin/bash
 
-echo "Launch time:"
-read TIME
-
 # Путь к файлу
-SERVICE_PATH="/etc/systemd/system/ffmpeg_capture.timer"
+SERVICE_PATH="/etc/systemd/system/ffmpeg_capture_1.timer"
 
 # Проверяем, существует ли файл
 if [ -f "$SERVICE_PATH" ]; then
@@ -14,7 +11,7 @@ else
 
     # Содержимое для файла
     SERVICE_CONTENT="[Unit]
-Description=Run English Bot Service Daily
+Description=Capture ffmpeg video from camera 1
 
 [Timer]
 OnCalendar=*-*-* $TIME:00:00
@@ -32,8 +29,8 @@ WantedBy=timers.target"
 
     # Перезапускаем systemd для применения изменений
     sudo systemctl daemon-reload
-    sudo systemctl enable ffmpeg_capture.timer
-    sudo systemctl start ffmpeg_capture.timer
-    sudo systemctl status ffmpeg_capture.timer
+    sudo systemctl enable ffmpeg_capture_1.timer
+    sudo systemctl start ffmpeg_capture_1.timer
+    sudo systemctl status ffmpeg_capture_1.timer
     echo "Systemd перезагружен."
 fi

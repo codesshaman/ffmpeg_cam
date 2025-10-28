@@ -1,8 +1,8 @@
 #!/bin/bash
 
 DEV_0="/dev/video0"
-DEV_1="/dev/video1"
 SIZE="640x480"
+MASK=""%d.%m.%y_%H-%M-%S""
 
 # Функция для ожидания подключения съёмного устройства
 # Возвращает путь к первому найденному устройству через глобальную переменную DEVICE_PATH
@@ -50,7 +50,7 @@ wait_for_removable_device() {
 
 # Функция для ожидания подключения видеоустройства /dev/video0
 # Устанавливает в глобальную переменную VIDEO_DEVICE_0 путь к устройству при успехе
-wait_for_video_device_0() {
+wait_for_video_device() {
     while true; do
         if [ -c "$DEV_0" ]; then
             echo "Видеоустройство подключено: $DEV_0"
@@ -62,37 +62,19 @@ wait_for_video_device_0() {
     done
 }
 
-# Функция для ожидания подключения видеоустройства /dev/video1
-# Устанавливает в глобальную переменную VIDEO_DEVICE_1 путь к устройству при успехе
-wait_for_video_device_1() {
-    while true; do
-        if [ -c "$DEV_1" ]; then
-            echo "Видеоустройство подключено: $DEV_1"
-            return 0
-        else
-            echo "Ожидание подключения видеоустройства $DEV_1..."
-            sleep 5
-        fi
-    done
-}
-
 # Проверяем подключенные девайсы
 wait_for_removable_device
 # Теперь переменная $DEVICE_PATH содержит путь к устройству
 
 # Проверяем подключение первой камеры
-wait_for_video_device_0
+wait_for_video_device
 # Теперь $VIDEO_DEVICE_0 содержит путь, если устройство найдено
-
-# Проверяем подключение второй камеры
-wait_for_video_device_1
-# Теперь $VIDEO_DEVICE_1 содержит путь, если устройство найдено
 
 # Проверяем подключение второй камеры
 # wait_for_video_device_1
 # Теперь $VIDEO_DEVICE_1 содержит путь, если устройство найдено
 
-record_video_from_device_0() {
+record_video_from_device() {
     # Проверяем, что обе переменные заданы
     if [ -z "$DEV_0" ] || [ -z "$DEVICE_PATH" ]; then
         echo "Ошибка: $DEV_0 или $DEVICE_PATH не определены!" >&2
@@ -100,7 +82,7 @@ record_video_from_device_0() {
     fi
 
     # Создаём имя файла: dev0_дд.мм.гг_чч:мм:сс.mp4
-    TIMESTAMP=$(date +"%d.%m.%y_%H:%M:%S")
+    TIMESTAMP=$(date +$MASK)
     OUTPUT_FILE="$DEVICE_PATH/dev0_${TIMESTAMP}.mp4"
 
     echo "Начинаем запись видео в: $OUTPUT_FILE"
@@ -124,4 +106,5 @@ record_video_from_device_0() {
     fi
 }
 
-record_video_from_device_0
+# Осуществляем запись
+record_video_from_device
