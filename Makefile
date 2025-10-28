@@ -19,7 +19,8 @@ ifneq (,$(wildcard .env))
 endif
 
 all:
-	@bash capture.sh
+	@bash scripts/create_service_0.sh
+	@bash scripts/create_service_1.sh
 
 git:
 	@printf "$(YELLOW)==== Set user name and email to git for ${name} repo... ====$(NO_COLOR)\n"

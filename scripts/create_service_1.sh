@@ -18,12 +18,12 @@ else
     # Содержимое для файла
     SERVICE_CONTENT="[Unit]
 Description=Camera 1 capturing service
-After=network.target
+After=local-fs.target remote-fs.target
 
 [Service]
-ExecStart=$CURRENT_DIR/capture_dev1.sh
-StandardOutput=file:$CURRENT_DIR/logfile_cam_1.log
-StandardError=file:$CURRENT_DIR/logfile_cam_1.log
+ExecStart=/usr/local/bin/capture_dev1.sh
+StandardOutput=journal
+StandardError=journal
 Group=$CURRENT_USER
 User=$CURRENT_USER
 Restart=always
