@@ -26,7 +26,7 @@ StandardOutput=file:$CURRENT_DIR/logfile_cam_0.log
 StandardError=file:$CURRENT_DIR/logfile_cam_0.log
 Group=$CURRENT_USER
 User=$CURRENT_USER
-Restart=on-failure
+Restart=always
 
 [Install]
 WantedBy=multi-user.target"
