@@ -38,10 +38,6 @@ WantedBy=multi-user.target"
     sudo chmod 644 "$SERVICE_PATH"
     echo "Файл $SERVICE_PATH успешно создан."
 
-    # Создаём лог-файл
-    sudo touch $CURRENT_DIR/logfile.log
-    sudo chown $CURRENT_USER:$CURRENT_USER $CURRENT_DIR/logfile.log
-
     # Перезапускаем systemd для применения изменений
     sudo systemctl daemon-reload
     sudo systemctl enable ffmpeg_capture_0.service

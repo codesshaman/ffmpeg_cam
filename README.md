@@ -2,7 +2,7 @@
 
 ### Необходимые зависимости:
 
-``ffmpeg, make, bash, git``
+``sudo, ffmpeg, make, bash, git``
 
 ### Процесс установки:
 
