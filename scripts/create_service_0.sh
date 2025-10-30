@@ -6,6 +6,12 @@ CURRENT_DIR=$(pwd)
 # Сохраняем текущего пользователя в переменную
 CURRENT_USER=$(whoami)
 
+# Копируем скрипт
+sudo cp $CURRENT_DIR/capture_dev0.sh /usr/local/bin
+
+# Даём права на исполнение
+sudo chmod a+x /usr/local/bin/capture_dev0.sh
+
 # Путь к файлу
 SERVICE_PATH="/etc/systemd/system/ffmpeg_capture_0.service"
 
@@ -17,7 +23,7 @@ else
 
     # Содержимое для файла
     SERVICE_CONTENT="[Unit]
-Description=Camera 1 capturing service
+Description=Camera 0 capturing service
 After=local-fs.target remote-fs.target
 
 [Service]
@@ -27,6 +33,11 @@ StandardError=journal
 Group=$CURRENT_USER
 User=$CURRENT_USER
 Restart=always
+
+KillMode=process
+TimeoutStopSec=10
+KillSignal=SIGINT
+SendSIGKILL=yes
 
 [Install]
 WantedBy=multi-user.target"

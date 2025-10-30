@@ -6,7 +6,13 @@ CURRENT_DIR=$(pwd)
 # Сохраняем текущего пользователя в переменную
 CURRENT_USER=$(whoami)
 
-# Путь к файлу
+# Копируем скрипт
+sudo cp $CURRENT_DIR/capture_dev1.sh /usr/local/bin
+
+# Даём права на исполнение
+sudo chmod a+x /usr/local/bin/capture_dev1.sh
+
+# Путь к файлу демона
 SERVICE_PATH="/etc/systemd/system/ffmpeg_capture_1.service"
 
 # Проверяем, существует ли файл
@@ -27,6 +33,11 @@ StandardError=journal
 Group=$CURRENT_USER
 User=$CURRENT_USER
 Restart=always
+
+KillMode=process
+TimeoutStopSec=10
+KillSignal=SIGINT
+SendSIGKILL=yes
 
 [Install]
 WantedBy=multi-user.target"

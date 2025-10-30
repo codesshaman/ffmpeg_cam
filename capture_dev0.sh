@@ -100,39 +100,43 @@ record_video_from_device() {
     echo "Устройство: $DEV_0 → $DEVICE_PATH/dev0_*.mp4"
     echo "Нажмите Ctrl+C для остановки"
 
-    # Ловим Ctrl+C для graceful выхода
-    trap 'echo -e "\nОстановлено пользователем."; return 0' INT TERM
+    # Ловим SIGINT и SIGTERM
+    trap 'echo -e "\nПолучен сигнал остановки. Завершаем текущую запись..."; kill $FFMPEG_PID 2>/dev/null; wait $FFMPEG_PID 2>/dev/null; exit 0' INT TERM
 
     # Бесконечный цикл
     while true; do
         TIMESTAMP=$(date +"$MASK")
-        OUTPUT_FILE="$DEVICE_PATH/dev0_${TIMESTAMP}.mp4"
+        OUTPUT_FILE="$DEVICE_PATH/${TIMESTAMP}_dev0.mp4"
 
         echo -e "\nНачинаем запись: $OUTPUT_FILE ($TIME минут)"
         echo "Параметры: 30 FPS, H.264, CRF 23"
 
-        # Запускаем ffmpeg на 10 минут
+        # Запускаем ffmpeg в фоне
         ffmpeg -f v4l2 \
-               -framerate 30 \
-               -video_size "$SIZE" \
-               -i "$DEV_0" \
-               -c:v libx264 \
-               -preset medium \
-               -crf 23 \
-               -t "$TIME" \
-               -y \
-               "$OUTPUT_FILE" \
-               > /dev/null 2>&1  # Скрываем вывод (или уберите для отладки)
+            -framerate 30 \
+            -video_size "$SIZE" \
+            -i "$DEV_0" \
+            -c:v libx264 \
+            -preset medium \
+            -crf 23 \
+            -t "$TIME" \
+            -y \
+            "$OUTPUT_FILE" \
+            > /dev/null 2>&1 &
 
+        FFMPEG_PID=$!  # Сохраняем PID ffmpeg
+
+        # Ждём завершения ffmpeg (по времени или по сигналу)
+        wait $FFMPEG_PID
         FF_EXIT=$?
+
         if [ $FF_EXIT -eq 0 ]; then
             echo "Запись завершена: $OUTPUT_FILE"
         else
             echo "Ошибка ffmpeg (код: $FF_EXIT) в файле: $OUTPUT_FILE" >&2
-            # Можно добавить sleep или break при критических ошибках
         fi
 
-        # Пауза перед следующей записью (на случай, если ffmpeg завершился раньше)
+        # Небольшая пауза перед новой итерацией
         sleep 1
     done
 }
